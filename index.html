@@ -1,8 +1,1554 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
-<head><meta charset="UTF-8"><title>Seoul Travel</title></head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>首爾 4日3夜 · 奢華舒適 Shopping · 醫美 · 人蔘酒之旅</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <style>
+    /* ── Custom Properties · Claude / Anthropic 官方色調 ── */
+    :root {
+      --clay:         #CC785C;  /* Claude 招牌陶土橙 */
+      --clay-dark:    #B05730;
+      --clay-deep:    #8F4422;
+      --clay-light:   #E8C5B0;
+      --clay-bg:      #F7EDE7;
+      --kraft:        #D4A27F;
+      --manila:       #EBDBBC;
+      --ink:          #1F1E1D;  /* 近黑墨色 */
+      --slate:        #3D3B37;
+      --slate-mid:    #6B675F;
+      --slate-light:  #9A958B;
+      --cream:        #F0EEE6;  /* Anthropic 標誌米白 */
+      --cream-card:   #FAF9F5;
+      --border:       #E5E1D6;
+      --white:        #ffffff;
+      /* 行程類型輔助色（暖調為主） */
+      --gold:         #B7791F;
+      --gold-light:   #FBF1D9;
+      --gold-bg:      #FCF7EA;
+      --amber:        #CA8A04;
+      --amber-dark:   #92660A;
+      --amber-light:  #FBEED0;
+      --amber-bg:     #FDF8EC;
+      --red:          #B5462F;
+      --red-light:    #F6DDD4;
+      --red-bg:       #FBEDE7;
+      --rose:         #A65A6E;
+      --rose-light:   #F3E1E6;
+      --rose-bg:      #FAF0F3;
+      --sage:         #5C7A5A;
+      --sage-light:   #DDE8DB;
+      --sage-bg:      #F0F5EE;
+      --brown:        #8C6A4E;
+      --brown-light:  #E9DDCF;
+      --brown-bg:     #F6F0E8;
+      --radius-sm:    6px;
+      --radius-md:    10px;
+      --radius-lg:    16px;
+      --radius-xl:    24px;
+      --shadow-sm:    0 1px 3px rgba(60,40,25,0.08);
+      --shadow-md:    0 4px 12px rgba(60,40,25,0.10);
+      --shadow-lg:    0 8px 28px rgba(60,40,25,0.16);
+      --font-serif:   'Noto Serif TC', 'PingFang TC', 'Microsoft JhengHei', serif;
+      --font-sans:    'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    }
+
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: var(--font-sans);
+      color: var(--slate);
+      background: var(--cream);
+      line-height: 1.6;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+    /* ── Sticky Header ── */
+    #site-header {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      background: var(--ink);
+      height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .header-brand {
+      font-family: var(--font-serif);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--white);
+      white-space: nowrap;
+      letter-spacing: 0.02em;
+    }
+    .header-brand span { color: var(--kraft); }
+    .day-nav {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      flex: 1;
+      justify-content: flex-end;
+    }
+    .day-nav::-webkit-scrollbar { display: none; }
+    .day-nav-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      background: rgba(255,255,255,0.1);
+      color: var(--manila);
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    .day-nav-link:hover,
+    .day-nav-link.active {
+      background: var(--clay);
+      color: var(--white);
+    }
+    .hamburger { display: none; flex-direction: column; gap: 5px; padding: 6px; }
+    .hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: var(--white); border-radius: 2px;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .mobile-nav {
+      display: none;
+      position: absolute;
+      top: 52px; left: 0; right: 0;
+      background: var(--ink);
+      padding: 12px 20px 16px;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .mobile-nav.open { display: flex; }
+    .mobile-nav .day-nav-link { justify-content: center; font-size: 0.9rem; padding: 8px; }
+
+    /* ── Hero ── */
+    #hero {
+      min-height: 90vh;
+      background:
+        linear-gradient(150deg, #2A1A12 0%, #6B3A22 42%, #A8573A 75%, #CC785C 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 80px 24px 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    #hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(212,162,127,0.30) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(42,26,18,0.45) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    #hero::after {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.3em;
+      color: var(--manila);
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .hero-title {
+      font-family: var(--font-serif);
+      font-size: clamp(2.2rem, 6.5vw, 4rem);
+      font-weight: 900;
+      color: var(--white);
+      line-height: 1.18;
+      letter-spacing: 0.04em;
+      margin-bottom: 16px;
+      text-shadow: 0 2px 20px rgba(0,0,0,0.4);
+      position: relative;
+    }
+    .hero-subtitle {
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      color: var(--clay-light);
+      margin-bottom: 14px;
+      font-weight: 400;
+      letter-spacing: 0.05em;
+      position: relative;
+    }
+    .hero-flights {
+      font-size: clamp(0.78rem, 2vw, 0.92rem);
+      color: var(--manila);
+      margin-bottom: 38px;
+      position: relative;
+      opacity: 0.9;
+    }
+    .hero-stats {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 48px;
+    }
+    .stat-pill {
+      padding: 8px 20px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: var(--radius-xl);
+      color: var(--white);
+      font-size: 0.88rem;
+      font-weight: 500;
+      backdrop-filter: blur(4px);
+      letter-spacing: 0.02em;
+    }
+    .hero-scroll {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.55);
+      font-size: 1.4rem;
+      animation: bounce 2s infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(8px); }
+    }
+
+    /* ── Hotel Banner ── */
+    #hotel-banner {
+      background: var(--cream-card);
+      border-bottom: 1px solid var(--border);
+      padding: 40px 0;
+    }
+    .hotel-card {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+    }
+    .hotel-emoji {
+      font-size: 2rem;
+      flex-shrink: 0;
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--clay-bg);
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--clay-light);
+    }
+    .hotel-body { flex: 1; min-width: 0; }
+    .hotel-eyebrow {
+      font-size: 0.68rem; font-weight: 600; letter-spacing: 0.18em;
+      color: var(--clay-dark); text-transform: uppercase; margin-bottom: 4px;
+    }
+    .hotel-name {
+      font-family: var(--font-serif); font-weight: 700;
+      font-size: 1.15rem; color: var(--ink); margin-bottom: 6px;
+    }
+    .hotel-meta {
+      display: flex; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 10px;
+      font-size: 0.8rem; color: var(--slate-mid);
+    }
+    .hotel-meta b { color: var(--clay-dark); font-weight: 600; }
+    .hotel-note {
+      font-size: 0.85rem; color: var(--slate); line-height: 1.55;
+      background: var(--clay-bg); border-left: 3px solid var(--clay);
+      border-radius: var(--radius-sm); padding: 10px 14px;
+    }
+
+    /* ── Route Bar ── */
+    #route {
+      background: var(--cream);
+      padding: 48px 0 44px;
+      border-bottom: 1px solid var(--border);
+    }
+    .route-label {
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      color: var(--slate-light);
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+    .route-scroll-wrap {
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 32px 8px;
+    }
+    .route-scroll-wrap::-webkit-scrollbar { display: none; }
+    .route-track {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      min-width: 600px;
+      max-width: 860px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .route-track::before {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 32px; right: 32px;
+      border-top: 2px dashed var(--kraft);
+      z-index: 0;
+    }
+    .route-stop {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      z-index: 1;
+      min-width: 72px;
+    }
+    .stop-circle {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      border: 3px solid var(--cream);
+      box-shadow: var(--shadow-md);
+    }
+    .stop-circle.flight  { background: var(--clay); }
+    .stop-circle.city    { background: var(--ink); }
+    .stop-circle.shop    { background: var(--gold); }
+    .stop-circle.food    { background: var(--red); }
+    .stop-circle.beauty  { background: var(--rose); }
+    .stop-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--ink);
+      text-align: center;
+      line-height: 1.2;
+    }
+    .stop-date {
+      font-size: 0.68rem;
+      color: var(--slate-light);
+      text-align: center;
+    }
+
+    /* ── Map Section ── */
+    #map-section {
+      background: var(--cream-card);
+      padding: 60px 0 64px;
+      border-bottom: 1px solid var(--border);
+    }
+    #map-section .container { max-width: 1100px; }
+    .map-eyebrow {
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      color: var(--slate-light);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .map-subtitle {
+      text-align: center;
+      color: var(--slate-mid);
+      font-size: 0.95rem;
+      margin-top: -32px;
+      margin-bottom: 28px;
+    }
+    #google-map {
+      width: 100%;
+      height: 520px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      background: #ece7dc;
+      overflow: hidden;
+    }
+    #map-fallback {
+      display: none;
+      padding: 28px;
+      text-align: center;
+      color: var(--slate-mid);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+    .map-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px 22px;
+      margin-top: 22px;
+      font-size: 0.82rem;
+      color: var(--slate-mid);
+    }
+    .map-legend-item { display: inline-flex; align-items: center; gap: 8px; }
+    .map-legend-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--white);
+      box-shadow: var(--shadow-sm);
+    }
+    .gm-iw-title {
+      font-family: var(--font-serif);
+      font-weight: 700;
+      color: var(--ink);
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+    .gm-iw-day {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--white);
+      background: var(--clay);
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-bottom: 6px;
+    }
+    .gm-iw-desc { font-size: 0.85rem; color: var(--slate-mid); line-height: 1.5; }
+    @media (max-width: 640px) {
+      #google-map { height: 420px; }
+    }
+
+    /* ── Itinerary Section ── */
+    #itinerary {
+      padding: 60px 0 80px;
+      background: var(--cream);
+    }
+    .section-title {
+      text-align: center;
+      font-family: var(--font-serif);
+      font-size: clamp(1.4rem, 3vw, 1.9rem);
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 48px;
+      letter-spacing: 0.04em;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* ── Day Block ── */
+    .day-block {
+      margin-bottom: 20px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      scroll-margin-top: 64px;
+      background: var(--cream-card);
+    }
+    .day-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      background: var(--ink);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .day-header:hover { background: #2C2A27; }
+    .day-num {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--clay);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-family: var(--font-serif);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.1;
+      text-align: center;
+    }
+    .day-info { flex: 1; min-width: 0; }
+    .day-date {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--white);
+      letter-spacing: 0.02em;
+    }
+    .day-theme {
+      font-size: 0.78rem;
+      color: var(--kraft);
+      margin-top: 2px;
+    }
+    .day-stay {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.78rem;
+      color: var(--manila);
+      white-space: nowrap;
+    }
+    .chevron {
+      color: var(--white);
+      font-size: 1.1rem;
+      transition: transform 0.3s;
+      opacity: 0.6;
+      flex-shrink: 0;
+    }
+    .chevron.open { transform: rotate(90deg); }
+
+    /* ── Day Body (Accordion) ── */
+    .day-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.45s ease, opacity 0.3s ease;
+      opacity: 0;
+      background: var(--cream-card);
+    }
+    .day-body.open { opacity: 1; }
+    .entry-list {
+      padding: 20px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+    }
+    .entry-list::before {
+      content: '';
+      position: absolute;
+      left: 40px; top: 28px; bottom: 28px;
+      width: 2px;
+      background: var(--border);
+      z-index: 0;
+    }
+
+    /* ── Entry ── */
+    .entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+    .time-badge {
+      min-width: 52px;
+      text-align: right;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--slate-light);
+      padding-top: 10px;
+      letter-spacing: 0.01em;
+      flex-shrink: 0;
+    }
+    .entry-icon {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      border: 2px solid var(--cream-card);
+      box-shadow: var(--shadow-sm);
+    }
+    .entry-content {
+      flex: 1;
+      min-width: 0;
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      border-left: 3px solid transparent;
+    }
+    .entry-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.3;
+    }
+    .entry-detail {
+      font-size: 0.8rem;
+      color: var(--slate-mid);
+      margin-top: 3px;
+      line-height: 1.45;
+    }
+    .entry-transport {
+      display: inline-flex;
+      align-items: flex-start;
+      gap: 5px;
+      font-size: 0.74rem;
+      color: var(--slate-mid);
+      margin-top: 6px;
+      background: rgba(0,0,0,0.03);
+      border-radius: var(--radius-sm);
+      padding: 4px 9px;
+    }
+
+    /* Entry Type Variants */
+    .entry--flight .entry-icon  { background: var(--clay); }
+    .entry--flight .entry-content { background: var(--clay-bg); border-color: var(--clay); }
+    .entry--hotel .entry-icon   { background: var(--brown); }
+    .entry--hotel .entry-content { background: var(--brown-bg); border-color: var(--brown); }
+    .entry--shop .entry-icon    { background: var(--gold); }
+    .entry--shop .entry-content { background: var(--gold-bg); border-color: var(--gold); }
+    .entry--lunch .entry-icon   { background: var(--amber); }
+    .entry--lunch .entry-content { background: var(--amber-bg); border-color: var(--amber); }
+    .entry--dinner .entry-icon  { background: var(--red); }
+    .entry--dinner .entry-content { background: var(--red-bg); border-color: var(--red); }
+    .entry--food .entry-icon    { background: var(--clay-dark); }
+    .entry--food .entry-content { background: var(--clay-bg); border-color: var(--clay-dark); }
+    .entry--beauty .entry-icon  { background: var(--rose); }
+    .entry--beauty .entry-content { background: var(--rose-bg); border-color: var(--rose); }
+    .entry--market .entry-icon  { background: var(--sage); }
+    .entry--market .entry-content { background: var(--sage-bg); border-color: var(--sage); }
+    .entry--free .entry-icon    { background: var(--slate-mid); }
+    .entry--free .entry-content { background: var(--cream); border-color: var(--border); }
+
+    /* Star / 重點 modifier */
+    .entry--star .entry-content {
+      background: linear-gradient(135deg, var(--clay-bg) 0%, var(--gold-light) 100%);
+      border-color: var(--gold);
+      box-shadow: 0 0 0 1px rgba(183,121,31,0.22), var(--shadow-sm);
+    }
+    .star-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--gold);
+      background: var(--gold-light);
+      border: 1px solid rgba(183,121,31,0.3);
+      border-radius: 20px;
+      padding: 2px 8px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* Price Tag */
+    .price-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--clay-deep);
+      background: var(--clay-light);
+      border-radius: 20px;
+      padding: 2px 10px;
+      margin-top: 7px;
+    }
+    .price-tag.muted {
+      color: var(--slate-mid);
+      background: var(--manila);
+    }
+
+    /* Boarding Pass */
+    .boarding-pass {
+      border: 2px dashed var(--clay);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      background: linear-gradient(135deg, var(--clay-bg) 0%, var(--cream) 100%);
+      margin-top: 6px;
+    }
+    .bp-route {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .bp-airport {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--ink);
+      letter-spacing: 0.05em;
+    }
+    .bp-arrow {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--clay);
+      font-size: 1.1rem;
+    }
+    .bp-arrow::before,
+    .bp-arrow::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--clay);
+      opacity: 0.4;
+    }
+    .bp-details {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .bp-field { font-size: 0.72rem; }
+    .bp-field-label {
+      color: var(--slate-light);
+      font-weight: 500;
+      display: block;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .bp-field-val { font-weight: 600; color: var(--ink); }
+    .flight-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px;
+      background: var(--clay);
+      color: var(--white);
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    /* Meal / type Tag */
+    .meal-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px 8px;
+      border-radius: 20px;
+      font-size: 0.68rem;
+      font-weight: 500;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .meal-tag--amber { background: var(--amber-light); color: var(--amber-dark); }
+    .meal-tag--red   { background: var(--red-light);   color: #8A2D1A; }
+    .meal-tag--clay  { background: var(--clay-light);  color: var(--clay-deep); }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: var(--ink);
+      color: var(--white);
+      padding: 10px 22px;
+      border-radius: var(--radius-xl);
+      font-size: 0.85rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      z-index: 999;
+      white-space: nowrap;
+      box-shadow: var(--shadow-lg);
+    }
+    #toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── Footer ── */
+    footer {
+      background: var(--ink);
+      color: var(--kraft);
+      text-align: center;
+      padding: 28px 24px;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .day-nav { display: none; }
+      .hamburger { display: flex; margin-left: auto; }
+      #site-header { padding: 0 16px; }
+      .hero-stats { gap: 8px; }
+      .stat-pill { font-size: 0.8rem; padding: 6px 14px; }
+      .entry-list { padding: 16px 14px 20px; }
+      .entry-list::before { left: 34px; }
+      .time-badge { min-width: 44px; font-size: 0.68rem; }
+      .bp-route { gap: 6px; }
+      .bp-airport { font-size: 1.1rem; }
+      .day-header { padding: 14px 16px; gap: 10px; }
+      .day-stay { display: none; }
+      .hotel-card { flex-direction: column; gap: 12px; }
+    }
+
+    /* ── Print ── */
+    @media print {
+      #site-header, #route, #map-section { display: none; }
+      .day-body { max-height: none !important; opacity: 1 !important; overflow: visible !important; }
+      .chevron { display: none; }
+      .day-block { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; margin-bottom: 16px; }
+      body { background: white; color: black; }
+      #hero {
+        min-height: auto; padding: 32px 16px;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      }
+    }
+
+    /* ── Password Gate ── */
+    #pw-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: linear-gradient(150deg, #2A1A12 0%, #6B3A22 50%, #A8573A 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Noto Sans TC', sans-serif;
+    }
+    #pw-box {
+      background: var(--cream-card);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    #pw-logo { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    #pw-title {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 1.25rem;
+      color: var(--ink);
+      margin: 0 0 0.25rem;
+    }
+    #pw-sub { color: var(--slate-mid); font-size: 0.85rem; margin: 0 0 1.5rem; }
+    #pw-label { color: var(--slate); font-size: 0.9rem; margin: 0 0 0.75rem; }
+    #pw-input {
+      width: 100%;
+      padding: 0.65rem 0.875rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+      letter-spacing: 0.25em;
+    }
+    #pw-input:focus { border-color: var(--clay); }
+    #pw-error {
+      color: var(--red);
+      font-size: 0.82rem;
+      margin: 0.5rem 0 0;
+    }
+    #pw-btn {
+      margin-top: 1rem;
+      width: 100%;
+      padding: 0.7rem;
+      background: var(--clay);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: 'Noto Sans TC', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #pw-btn:hover { background: var(--clay-dark); }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60% { transform: translateX(-6px); }
+      40%,80% { transform: translateX(6px); }
+    }
+    #pw-input.shake { animation: shake 0.45s ease; }
+  </style>
+</head>
 <body>
-  <h1>首爾旅遊</h1>
-  <p>互動行程頁面開發中 — 詳見 PR 分支。</p>
+<div id="pw-gate">
+  <div id="pw-box">
+    <div id="pw-logo">🇰🇷</div>
+    <h2 id="pw-title">首爾 4日3夜之旅</h2>
+    <p id="pw-sub">Seoul Itinerary · 2026</p>
+    <p id="pw-label">請輸入密碼以繼續</p>
+    <input id="pw-input" type="password" placeholder="Password" autocomplete="off" maxlength="20" />
+    <p id="pw-error" hidden>密碼錯誤，請再試一次。</p>
+    <button id="pw-btn">解鎖 →</button>
+  </div>
+</div>
+
+<!-- ── Sticky Header ── -->
+<header id="site-header">
+  <div class="header-brand">🇰🇷 <span>首爾</span>之旅</div>
+  <nav class="day-nav" aria-label="Day navigation">
+    <a class="day-nav-link" href="#day-1">Day 1</a>
+    <a class="day-nav-link" href="#day-2">Day 2</a>
+    <a class="day-nav-link" href="#day-3">Day 3</a>
+    <a class="day-nav-link" href="#day-4">Day 4</a>
+    <a class="day-nav-link" href="#map-section">🗺️ 地圖</a>
+  </nav>
+  <button class="hamburger" aria-label="Open navigation" aria-expanded="false" id="hamburger">
+    <span></span><span></span><span></span>
+  </button>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile day navigation">
+    <a class="day-nav-link" href="#day-1">Day 1 — 抵達·龍山·mimiok</a>
+    <a class="day-nav-link" href="#day-2">Day 2 — 夢炭·醫美·The Hyundai</a>
+    <a class="day-nav-link" href="#day-3">Day 3 — 人蔘酒·COEX·韓牛</a>
+    <a class="day-nav-link" href="#day-4">Day 4 — 聖水洞·蔘雞湯·樂天</a>
+    <a class="day-nav-link" href="#map-section">🗺️ 行程地圖</a>
+  </nav>
+</header>
+
+<!-- ── Hero ── -->
+<section id="hero">
+  <p class="hero-eyebrow">SEOUL · KOREA · 2026</p>
+  <h1 class="hero-title">首爾 4日3夜<br>奢華舒適之旅</h1>
+  <p class="hero-subtitle">Shopping · 醫美 · 人蔘酒之旅（九樹龍山酒店確選版）</p>
+  <p class="hero-flights">📅 7月6日（一）— 7月9日（四） &nbsp;|&nbsp; ✈️ 去程 HX628 (08:45) · 回程 7C6013 (20:40)</p>
+  <div class="hero-stats">
+    <span class="stat-pill">🛍️ Shopping 掃貨</span>
+    <span class="stat-pill">💆 高效醫美</span>
+    <span class="stat-pill">🍶 中部市場人蔘酒</span>
+    <span class="stat-pill">🥩 頂級韓牛盛宴</span>
+  </div>
+  <div class="hero-scroll" aria-hidden="true">↓</div>
+</section>
+
+<!-- ── Hotel Banner ── -->
+<section id="hotel-banner">
+  <div class="hotel-card">
+    <div class="hotel-emoji">🏨</div>
+    <div class="hotel-body">
+      <div class="hotel-eyebrow">確選住宿酒店 · 3 晚不移動</div>
+      <div class="hotel-name">九樹龍山酒店　Nine Tree Premier Hotel Yongsan</div>
+      <div class="hotel-meta">
+        <span>📍 <b>新龍山站 / 龍山站</b></span>
+        <span>🚇 地鐵 4 號線新龍山站直達 · 1 號線龍山站步行 5 分鐘</span>
+      </div>
+      <div class="hotel-note">
+        3 晚皆入住此處不移動。樓下直通地鐵站，去夢炭、Mimiok、龍山蔘雞湯皆在步行或極短車程內，完美基地的選擇。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Route Bar ── -->
+<section id="route">
+  <p class="route-label">Journey Route</p>
+  <div class="route-scroll-wrap">
+    <div class="route-track">
+      <div class="route-stop">
+        <div class="stop-circle flight">✈️</div>
+        <div class="stop-name">香港<br>HKG</div>
+        <div class="stop-date">7/6 出發</div>
+      </div>
+      <div class="route-stop">
+        <div class="stop-circle city">🏨</div>
+        <div class="stop-name">龍山<br>I'Park</div>
+        <div class="stop-date">Day 1</div>
+      </div>
+      <div class="route-stop">
+        <div class="stop-circle food">🥩</div>
+        <div class="stop-name">夢炭<br>汝矣島</div>
+        <div class="stop-date">Day 2</div>
+      </div>
+      <div class="route-stop">
+        <div class="stop-circle shop">🍶</div>
+        <div class="stop-name">中部市場<br>COEX</div>
+        <div class="stop-date">Day 3</div>
+      </div>
+      <div class="route-stop">
+        <div class="stop-circle beauty">👕</div>
+        <div class="stop-name">聖水洞<br>樂天</div>
+        <div class="stop-date">Day 4</div>
+      </div>
+      <div class="route-stop">
+        <div class="stop-circle flight">✈️</div>
+        <div class="stop-name">香港<br>HKG</div>
+        <div class="stop-date">7/9 回程</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Map ── -->
+<section id="map-section">
+  <div class="container">
+    <p class="map-eyebrow">Trip Map</p>
+    <h2 class="section-title">行程地圖</h2>
+    <p class="map-subtitle">點擊地圖標記查看每個目的地詳情</p>
+    <div id="google-map" role="region" aria-label="首爾行程地圖">
+      <div id="map-fallback">
+        <p>📍 地圖載入中… 若長時間未顯示，請檢查網絡連線（地圖資源來自 OpenStreetMap / unpkg CDN）。</p>
+      </div>
+    </div>
+    <div class="map-legend" aria-label="地圖圖例">
+      <span class="map-legend-item"><span class="map-legend-dot" style="background:#CC785C"></span>機場 / 交通</span>
+      <span class="map-legend-item"><span class="map-legend-dot" style="background:#8C6A4E"></span>酒店</span>
+      <span class="map-legend-item"><span class="map-legend-dot" style="background:#B7791F"></span>購物商場</span>
+      <span class="map-legend-item"><span class="map-legend-dot" style="background:#B5462F"></span>餐廳美食</span>
+      <span class="map-legend-item"><span class="map-legend-dot" style="background:#A65A6E"></span>醫美</span>
+      <span class="map-legend-item"><span class="map-legend-dot" style="background:#5C7A5A"></span>傳統市場</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── Itinerary ── -->
+<section id="itinerary">
+  <div class="container">
+    <h2 class="section-title">每日詳細行程</h2>
+
+    <!-- ╔══════════════════════ DAY 1 ══════════════════════╗ -->
+    <div class="day-block" id="day-1">
+      <div class="day-header" role="button" aria-expanded="false" tabindex="0">
+        <div class="day-num">D<br>1</div>
+        <div class="day-info">
+          <div class="day-date">7月6日（一）</div>
+          <div class="day-theme">✈️ 抵達首爾 · 龍山熱身 · mimiok 暖胃</div>
+        </div>
+        <div class="day-stay">🏨 九樹龍山酒店</div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="day-body">
+        <div class="entry-list">
+
+          <!-- Flight HX628 -->
+          <div class="entry entry--flight">
+            <div class="time-badge">08:45</div>
+            <div class="entry-icon">✈️</div>
+            <div class="entry-content">
+              <div class="entry-title">
+                <span class="flight-badge">HX628</span>
+                &nbsp;搭乘香港航空前往首爾
+              </div>
+              <div class="boarding-pass">
+                <div class="bp-route">
+                  <div>
+                    <div class="bp-airport">HKG</div>
+                    <div style="font-size:0.7rem;color:var(--slate-mid)">香港國際機場<br>08:45</div>
+                  </div>
+                  <div class="bp-arrow">✈</div>
+                  <div style="text-align:right">
+                    <div class="bp-airport">ICN</div>
+                    <div style="font-size:0.7rem;color:var(--slate-mid)">仁川國際機場<br>13:35</div>
+                  </div>
+                </div>
+                <div class="bp-details">
+                  <div class="bp-field"><span class="bp-field-label">航空公司</span><span class="bp-field-val">香港航空</span></div>
+                  <div class="bp-field"><span class="bp-field-label">航班號</span><span class="bp-field-val">HX628</span></div>
+                  <div class="bp-field"><span class="bp-field-label">航程</span><span class="bp-field-val">日間航班</span></div>
+                </div>
+              </div>
+              <div class="entry-transport">🚆 抵達後搭乘 AREX 快線至首爾站，轉地鐵 4 號線直達新龍山站</div>
+            </div>
+          </div>
+
+          <!-- Check-in -->
+          <div class="entry entry--hotel">
+            <div class="time-badge">中午</div>
+            <div class="entry-icon">🏨</div>
+            <div class="entry-content">
+              <div class="entry-title">九樹龍山酒店 Check-in</div>
+              <div class="entry-detail">前往九樹酒店辦理入住及寄存行李，稍作休息。</div>
+              <div class="entry-transport">🚇 新龍山站直達</div>
+            </div>
+          </div>
+
+          <!-- I'Park Mall -->
+          <div class="entry entry--shop">
+            <div class="time-badge">下午</div>
+            <div class="entry-icon">🛍️</div>
+            <div class="entry-content">
+              <div class="entry-title">龍山 I'Park Mall 熱身購物</div>
+              <div class="entry-detail">與龍山站相連的巨型商場，有齊潮牌、雜貨、美妝。順路可看太平洋總部大樓。</div>
+              <div class="entry-transport">🚶 室內通道 / 步行 5 分鐘</div>
+            </div>
+          </div>
+
+          <!-- Dinner mimiok -->
+          <div class="entry entry--food">
+            <div class="time-badge">晚上</div>
+            <div class="entry-icon">🍜</div>
+            <div class="entry-content">
+              <div class="entry-title">晚餐：mimiok（미미옥）<span class="meal-tag meal-tag--clay">晚餐</span></div>
+              <div class="entry-detail">老屋改建的新派韓式米線店。以清甜雞湯和韓牛作湯底，味道清爽，為首爾首晚暖胃。</div>
+              <div class="entry-transport">🚶 由酒店步行約 10 分鐘</div>
+              <div class="price-tag">💰 雙人約 HK$220</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- /day-1 -->
+
+    <!-- ╔══════════════════════ DAY 2 ══════════════════════╗ -->
+    <div class="day-block" id="day-2">
+      <div class="day-header" role="button" aria-expanded="false" tabindex="0">
+        <div class="day-num">D<br>2</div>
+        <div class="day-info">
+          <div class="day-date">7月7日（二）</div>
+          <div class="day-theme">🥩 夢炭 Lunch · 下午醫美避暑 · The Hyundai</div>
+        </div>
+        <div class="day-stay">🏨 九樹龍山酒店</div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="day-body">
+        <div class="entry-list">
+
+          <!-- Morning -->
+          <div class="entry entry--free">
+            <div class="time-badge">早上</div>
+            <div class="entry-icon">☕</div>
+            <div class="entry-content">
+              <div class="entry-title">悠閒早餐 / 準備拿籌</div>
+              <div class="entry-detail">在酒店附近悠閒享用早餐，隨後準備前往夢炭拿籌。</div>
+              <div class="entry-transport">🚶 步行</div>
+            </div>
+          </div>
+
+          <!-- Mongtan Lunch -->
+          <div class="entry entry--lunch entry--star">
+            <div class="time-badge">中午</div>
+            <div class="entry-icon">🥩</div>
+            <div class="entry-content">
+              <div class="entry-title">午餐：夢炭（Mongtan）<span class="star-badge">🌟 Lunch 重點</span></div>
+              <div class="entry-detail">超人氣草燒牛肋骨烤肉！中午吃能有效避開晚餐的恐怖人潮，煙燻香氣極具特色。</div>
+              <div class="entry-transport">🚇 由新龍山站搭 4 號線至三角地站 · 步行約 15 分鐘 / 的士 5 分鐘</div>
+              <div class="price-tag">💰 雙人約 HK$700</div>
+            </div>
+          </div>
+
+          <!-- Medical -->
+          <div class="entry entry--beauty entry--star">
+            <div class="time-badge">下午</div>
+            <div class="entry-icon">💆</div>
+            <div class="entry-content">
+              <div class="entry-title">高效醫美體驗<span class="star-badge">🌟 下午避暑</span></div>
+              <div class="entry-detail">預約好的連鎖醫美診所進行皮膚管理。下午做醫美可完全避開 7 月烈日曝曬，在冷氣房舒舒服服變靚。</div>
+              <div class="entry-transport">🚇 由夢炭搭地鐵 4 號線直達 明洞 / 新沙 / 江南（約 15–30 分鐘）</div>
+              <div class="price-tag muted">💰 視療程而定</div>
+            </div>
+          </div>
+
+          <!-- The Hyundai -->
+          <div class="entry entry--shop">
+            <div class="time-badge">晚上</div>
+            <div class="entry-icon">🛍️</div>
+            <div class="entry-content">
+              <div class="entry-title">The Hyundai Seoul 購物 + 晚餐<span class="meal-tag meal-tag--amber">晚餐</span></div>
+              <div class="entry-detail">首爾最大最紅室內商場。B2 層有齊 Matin Kim 等潮牌。直接在商場高層美食街晚餐。</div>
+              <div class="entry-transport">🚇 由醫美診所搭地鐵至汝矣島站，地下冷氣通道直達商場</div>
+              <div class="price-tag">💰 雙人約 HK$550</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- /day-2 -->
+
+    <!-- ╔══════════════════════ DAY 3 ══════════════════════╗ -->
+    <div class="day-block" id="day-3">
+      <div class="day-header" role="button" aria-expanded="false" tabindex="0">
+        <div class="day-num">D<br>3</div>
+        <div class="day-info">
+          <div class="day-date">7月8日（三）</div>
+          <div class="day-theme">🍶 中部市場人蔘酒 · COEX · 江南韓牛盛宴</div>
+        </div>
+        <div class="day-stay">🏨 九樹龍山酒店</div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="day-body">
+        <div class="entry-list">
+
+          <!-- Jungbu Market -->
+          <div class="entry entry--market entry--star">
+            <div class="time-badge">早上</div>
+            <div class="entry-icon">🍶</div>
+            <div class="entry-content">
+              <div class="entry-title">中部市場<span class="star-badge">🌟 買傳統人蔘酒</span></div>
+              <div class="entry-detail">首爾著名的傳統乾貨與藥材市場。這裡可以買到最道地、性價比極高的韓國傳統人蔘酒與人蔘產品，適合送禮自用。</div>
+              <div class="entry-transport">🚇 由新龍山站搭 4 號線至「乙支路 4 街站」7 號出口步行 5 分鐘（約 20 分鐘）</div>
+              <div class="price-tag">💰 雙人約 HK$300</div>
+            </div>
+          </div>
+
+          <!-- COEX Lunch -->
+          <div class="entry entry--lunch">
+            <div class="time-badge">中午</div>
+            <div class="entry-icon">🍱</div>
+            <div class="entry-content">
+              <div class="entry-title">COEX Mall 內享用午餐<span class="meal-tag meal-tag--amber">午餐</span></div>
+              <div class="entry-detail">於商場內享用高質感的韓式定食或人氣熟成豬肉。</div>
+              <div class="entry-transport">🚇 由乙支路 4 街站搭 2 號線直達三成站（約 25 分鐘）</div>
+              <div class="price-tag">💰 雙人約 HK$240</div>
+            </div>
+          </div>
+
+          <!-- Starfield COEX -->
+          <div class="entry entry--shop">
+            <div class="time-badge">下午</div>
+            <div class="entry-icon">📚</div>
+            <div class="entry-content">
+              <div class="entry-title">Starfield COEX Mall 購物</div>
+              <div class="entry-detail">亞洲最大地下購物中心，完全不曬太陽。核心亮點為「星空圖書館」，極適合夫妻打卡。</div>
+              <div class="entry-transport">🚇 地鐵站直達</div>
+            </div>
+          </div>
+
+          <!-- Gangnam Hanwoo Dinner -->
+          <div class="entry entry--dinner entry--star">
+            <div class="time-badge">晚上</div>
+            <div class="entry-icon">🥩</div>
+            <div class="entry-content">
+              <div class="entry-title">江南頂級烤韓牛盛宴<span class="star-badge">🌟 頂級美味</span></div>
+              <div class="entry-detail">難得來到江南，安排一頓頂級韓牛烤肉盛宴，享受極致美味。</div>
+              <div class="entry-transport">🚇 地鐵 / 步行</div>
+              <div class="price-tag">💰 雙人約 HK$850</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- /day-3 -->
+
+    <!-- ╔══════════════════════ DAY 4 ══════════════════════╗ -->
+    <div class="day-block" id="day-4">
+      <div class="day-header" role="button" aria-expanded="false" tabindex="0">
+        <div class="day-num">D<br>4</div>
+        <div class="day-info">
+          <div class="day-date">7月9日（四）</div>
+          <div class="day-theme">👕 聖水洞買衫 · 龍山蔘雞湯 · 樂天最後衝刺</div>
+        </div>
+        <div class="day-stay">✈️ 仁川機場回程</div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="day-body">
+        <div class="entry-list">
+
+          <!-- Checkout + Seongsu -->
+          <div class="entry entry--shop entry--star">
+            <div class="time-badge">早上</div>
+            <div class="entry-icon">👕</div>
+            <div class="entry-content">
+              <div class="entry-title">九樹酒店退房 ➡️ 聖水洞買衫<span class="star-badge">🌟 潮流發源地</span></div>
+              <div class="entry-detail">首爾潮流發源地。沿街有各種獨棟旗艦店、選品店（如 Musinsa Standard 等），買衫必去！</div>
+              <div class="entry-transport">🚇 由新龍山站搭 4 號線至往十里站，轉 2 號線至聖水站（約 35 分鐘）</div>
+            </div>
+          </div>
+
+          <!-- Samgyetang Lunch -->
+          <div class="entry entry--food">
+            <div class="time-badge">中午</div>
+            <div class="entry-icon">🍲</div>
+            <div class="entry-content">
+              <div class="entry-title">午餐：龍山蔘雞湯<span class="meal-tag meal-tag--clay">午餐</span></div>
+              <div class="entry-detail">回程前回到龍山，品嚐老字號「龍山蔘雞湯」。濃郁的參湯配上嫩滑雞肉，上飛機前完美的溫補結尾。</div>
+              <div class="entry-transport">🚇 由聖水站搭地鐵 / 的士返回龍山</div>
+              <div class="price-tag">💰 雙人約 HK$260</div>
+            </div>
+          </div>
+
+          <!-- Lotte World Mall -->
+          <div class="entry entry--shop">
+            <div class="time-badge">下午</div>
+            <div class="entry-icon">🛍️</div>
+            <div class="entry-content">
+              <div class="entry-title">LOTTE WORLD MALL 最後衝刺</div>
+              <div class="entry-detail">樂天世界塔底部的殿堂級商場。平價快時尚、免稅店俱全。可選自費登 Seoul Sky 觀景台。</div>
+              <div class="entry-transport">🚇 由龍山搭地鐵 1 號線至市廳站，轉 2 號線至蠶室站（約 45 分鐘）</div>
+            </div>
+          </div>
+
+          <!-- Return flight -->
+          <div class="entry entry--flight">
+            <div class="time-badge">晚上</div>
+            <div class="entry-icon">✈️</div>
+            <div class="entry-content">
+              <div class="entry-title">
+                <span class="flight-badge">7C6013</span>
+                &nbsp;回酒店取行李 ➡️ 仁川機場
+              </div>
+              <div class="boarding-pass">
+                <div class="bp-route">
+                  <div>
+                    <div class="bp-airport">ICN</div>
+                    <div style="font-size:0.7rem;color:var(--slate-mid)">仁川國際機場<br>20:40</div>
+                  </div>
+                  <div class="bp-arrow">✈</div>
+                  <div style="text-align:right">
+                    <div class="bp-airport">HKG</div>
+                    <div style="font-size:0.7rem;color:var(--slate-mid)">香港國際機場</div>
+                  </div>
+                </div>
+                <div class="bp-details">
+                  <div class="bp-field"><span class="bp-field-label">航空公司</span><span class="bp-field-val">濟州航空</span></div>
+                  <div class="bp-field"><span class="bp-field-label">航班號</span><span class="bp-field-val">7C6013</span></div>
+                  <div class="bp-field"><span class="bp-field-label">起飛</span><span class="bp-field-val">20:40</span></div>
+                </div>
+              </div>
+              <div class="entry-transport">🚆 傍晚 17:00 前返酒店取行李，搭乘 AREX 前往仁川機場</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- /day-4 -->
+
+  </div><!-- /container -->
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div>🇰🇷 首爾 4日3夜 · 奢華舒適 Shopping · 醫美 · 人蔘酒之旅</div>
+  <div style="margin-top:6px;opacity:0.7">2026年 7月6–9日 · 龍山 · 汝矣島 · 江南 · 聖水洞 · 蠶室</div>
+</footer>
+
+<!-- ── Toast ── -->
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── Clipboard helper ── */
+  function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return Promise.resolve();
+  }
+
+  /* ── Toast ── */
+  var toast = document.getElementById('toast');
+  var toastTimer;
+  function showToast(msg) {
+    clearTimeout(toastTimer);
+    toast.textContent = msg;
+    toast.classList.add('visible');
+    toastTimer = setTimeout(function () {
+      toast.classList.remove('visible');
+    }, 2200);
+  }
+
+  /* ── Accordion ── */
+  function openDay(header) {
+    var body = header.nextElementSibling;
+    header.setAttribute('aria-expanded', 'true');
+    var chevron = header.querySelector('.chevron');
+    if (chevron) chevron.classList.add('open');
+    body.style.maxHeight = body.scrollHeight + 'px';
+    body.style.opacity = '1';
+    body.classList.add('open');
+  }
+
+  function closeDay(header) {
+    var body = header.nextElementSibling;
+    header.setAttribute('aria-expanded', 'false');
+    var chevron = header.querySelector('.chevron');
+    if (chevron) chevron.classList.remove('open');
+    body.style.maxHeight = '0';
+    body.style.opacity = '0';
+    body.classList.remove('open');
+  }
+
+  document.querySelectorAll('.day-header').forEach(function (header) {
+    header.addEventListener('click', function () {
+      var isOpen = header.getAttribute('aria-expanded') === 'true';
+      if (isOpen) { closeDay(header); } else { openDay(header); }
+    });
+    header.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        header.click();
+      }
+    });
+  });
+
+  /* Open Day 1 by default */
+  var day1Header = document.querySelector('#day-1 .day-header');
+  if (day1Header) openDay(day1Header);
+
+  /* Recalculate open accordion height after resize */
+  window.addEventListener('resize', function () {
+    document.querySelectorAll('.day-header[aria-expanded="true"]').forEach(function (h) {
+      var body = h.nextElementSibling;
+      body.style.maxHeight = body.scrollHeight + 'px';
+    });
+  });
+
+  /* ── Mobile Nav ── */
+  var hamburger = document.getElementById('hamburger');
+  var mobileNav = document.getElementById('mobile-nav');
+  hamburger.addEventListener('click', function () {
+    var isOpen = mobileNav.classList.toggle('open');
+    hamburger.setAttribute('aria-expanded', String(isOpen));
+  });
+  mobileNav.querySelectorAll('a').forEach(function (link) {
+    link.addEventListener('click', function () {
+      mobileNav.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+    });
+  });
+  document.addEventListener('click', function (e) {
+    if (!hamburger.contains(e.target) && !mobileNav.contains(e.target)) {
+      mobileNav.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  /* ── Active Day Highlight in Nav ── */
+  var navLinks = document.querySelectorAll('.day-nav-link');
+  var dayBlocks = document.querySelectorAll('.day-block');
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          var id = entry.target.id;
+          navLinks.forEach(function (l) { l.classList.remove('active'); });
+          var active = document.querySelector('.day-nav-link[href="#' + id + '"]');
+          if (active) active.classList.add('active');
+        }
+      });
+    }, { threshold: 0.3 });
+    dayBlocks.forEach(function (b) { observer.observe(b); });
+  }
+})();
+
+/* ── Password Gate Logic ── */
+(function () {
+  var gate  = document.getElementById('pw-gate');
+  var input = document.getElementById('pw-input');
+  var btn   = document.getElementById('pw-btn');
+  var err   = document.getElementById('pw-error');
+
+  if (sessionStorage.getItem('itinerary_unlocked')) {
+    gate.style.display = 'none';
+    return;
+  }
+
+  function attempt() {
+    if (input.value === '1234') {
+      sessionStorage.setItem('itinerary_unlocked', '1');
+      gate.style.transition = 'opacity 0.4s';
+      gate.style.opacity = '0';
+      setTimeout(function () { gate.style.display = 'none'; }, 420);
+    } else {
+      err.hidden = false;
+      input.classList.add('shake');
+      input.value = '';
+      setTimeout(function () { input.classList.remove('shake'); }, 500);
+    }
+  }
+
+  btn.addEventListener('click', attempt);
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') attempt(); });
+  input.focus();
+})();
+
+/* ── Leaflet + OpenStreetMap: 行程目的地 ── */
+window.SEOUL_DESTINATIONS = [
+  { day: 'Day 1', name: '仁川國際機場 ICN', desc: 'HX628 抵達後搭 AREX 快線至首爾站，轉 4 號線往新龍山站', lat: 37.4602, lng: 126.4407, type: 'flight' },
+  { day: 'Day 1', name: '九樹龍山酒店', desc: 'Nine Tree Premier Hotel Yongsan · 3 晚基地，新龍山站直達', lat: 37.5298, lng: 126.9648, type: 'hotel' },
+  { day: 'Day 1', name: '龍山 I’Park Mall', desc: '與龍山站相連的巨型商場，潮牌、雜貨、美妝齊全', lat: 37.5298, lng: 126.9648, type: 'shop' },
+  { day: 'Day 1', name: 'mimiok（미미옥）', desc: '老屋改建新派韓式米線店，清甜雞湯 + 韓牛湯底 · 雙人約 HK$220', lat: 37.5340, lng: 126.9720, type: 'food' },
+  { day: 'Day 2', name: '夢炭 Mongtan（三角地）', desc: '🌟 超人氣草燒牛肋骨烤肉，中午吃避開人潮 · 雙人約 HK$700', lat: 37.5347, lng: 126.9730, type: 'food' },
+  { day: 'Day 2', name: '醫美診所（明洞 / 新沙 / 江南）', desc: '下午皮膚管理，冷氣房避開 7 月烈日 · 視療程而定', lat: 37.5172, lng: 127.0203, type: 'beauty' },
+  { day: 'Day 2', name: 'The Hyundai Seoul（汝矣島）', desc: '首爾最大室內商場，B2 有 Matin Kim 等潮牌 + 晚餐 · 雙人約 HK$550', lat: 37.5258, lng: 126.9285, type: 'shop' },
+  { day: 'Day 3', name: '中部市場（乙支路4街）', desc: '🌟 傳統乾貨藥材市場，買道地人蔘酒與人蔘產品 · 雙人約 HK$300', lat: 37.5663, lng: 126.9990, type: 'market' },
+  { day: 'Day 3', name: 'Starfield COEX Mall（三成）', desc: '亞洲最大地下購物中心 · 星空圖書館打卡 · 午餐雙人約 HK$240', lat: 37.5126, lng: 127.0590, type: 'shop' },
+  { day: 'Day 3', name: '江南頂級烤韓牛', desc: '🌟 江南頂級韓牛烤肉盛宴，極致美味 · 雙人約 HK$850', lat: 37.5040, lng: 127.0490, type: 'food' },
+  { day: 'Day 4', name: '聖水洞（聖水站）', desc: '🌟 首爾潮流發源地，獨棟旗艦店、選品店，買衫必去', lat: 37.5446, lng: 127.0560, type: 'shop' },
+  { day: 'Day 4', name: '龍山蔘雞湯', desc: '老字號濃郁參湯配嫩滑雞肉，上飛機前完美溫補 · 雙人約 HK$260', lat: 37.5320, lng: 126.9670, type: 'food' },
+  { day: 'Day 4', name: 'LOTTE WORLD MALL（蠶室）', desc: '樂天世界塔殿堂級商場，快時尚 + 免稅店，可登 Seoul Sky', lat: 37.5125, lng: 127.1025, type: 'shop' }
+];
+
+function initLeafletMap() {
+  var dests = window.SEOUL_DESTINATIONS;
+  var mapEl = document.getElementById('google-map');
+  if (!mapEl || !window.L) return;
+
+  var fallback = document.getElementById('map-fallback');
+  if (fallback) fallback.style.display = 'none';
+
+  var typeColor = {
+    flight: '#CC785C',
+    hotel:  '#8C6A4E',
+    shop:   '#B7791F',
+    food:   '#B5462F',
+    beauty: '#A65A6E',
+    market: '#5C7A5A'
+  };
+
+  var map = L.map(mapEl, { scrollWheelZoom: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  var latlngs = [];
+  dests.forEach(function (d, idx) {
+    var color = typeColor[d.type] || '#CC785C';
+    var icon = L.divIcon({
+      className: 'trip-marker',
+      html:
+        '<div style="width:28px;height:28px;border-radius:50%;background:' + color +
+        ';border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35);' +
+        'display:flex;align-items:center;justify-content:center;color:#fff;' +
+        'font-size:12px;font-weight:700;line-height:1">' + (idx + 1) + '</div>',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+      popupAnchor: [0, -14]
+    });
+    var marker = L.marker([d.lat, d.lng], { icon: icon, title: d.name }).addTo(map);
+    var popupHtml =
+      '<div style="max-width:240px;padding:2px">' +
+        '<span class="gm-iw-day">' + d.day + '</span>' +
+        '<div class="gm-iw-title">' + d.name + '</div>' +
+        '<div class="gm-iw-desc">' + d.desc + '</div>' +
+      '</div>';
+    marker.bindPopup(popupHtml);
+    latlngs.push([d.lat, d.lng]);
+  });
+
+  L.polyline(latlngs, {
+    color: '#CC785C',
+    weight: 3,
+    opacity: 0.85,
+    dashArray: '6 8'
+  }).addTo(map);
+
+  map.fitBounds(latlngs, { padding: [40, 40] });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initLeafletMap);
+} else {
+  initLeafletMap();
+}
+
+setTimeout(function () {
+  if (!window.L) {
+    var fb = document.getElementById('map-fallback');
+    if (fb) fb.style.display = 'block';
+  }
+}, 6000);
+</script>
+
+<!-- Leaflet (OpenStreetMap) -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
 </body>
 </html>
